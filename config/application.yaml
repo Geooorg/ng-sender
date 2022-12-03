@@ -1,0 +1,12 @@
+
+http:
+  port: 19200
+  log:
+    directory: /sent-messages
+
+nats:
+  url: nats://localhost:4222
+
+temporal:
+  address: localhost:7233
+  namespace: sender-service

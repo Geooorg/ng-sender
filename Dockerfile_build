@@ -1,0 +1,23 @@
+FROM golang:1.19-alpine as build-env
+
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+#ENV GOOS=darwin
+#ENV GOARCH=arm64
+
+ENV CGO_ENABLED=0
+
+ADD . /src
+WORKDIR /src
+
+RUN go build -o service
+
+# Always use distroless in nonroot mode!
+FROM gcr.io/distroless/base:nonroot
+COPY --from=build-env /src/service /
+COPY config/application.yaml /
+RUN mkdir -p /messages
+
+ENTRYPOINT [ "/service" ]
+CMD [ "serve-http", "--config", "/application.yaml" ]
