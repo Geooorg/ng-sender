@@ -4,6 +4,11 @@ http:
   log:
     directory: /sent-messages
 
+centralService:
+  url: http://localhost:1042
+  endpoints:
+    stations: /stations.json
+
 nats:
   url: nats://localhost:4222
 

@@ -6,7 +6,7 @@ import (
 	"ng-receiver/pkg/common"
 )
 
-func (s *Server) CreateWarningMessage(w http.ResponseWriter, r *http.Request) {
+func (s *Server) SendWarningMessageToAllReceivers(w http.ResponseWriter, r *http.Request) {
 
 	println("received warning message")
 

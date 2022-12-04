@@ -11,9 +11,10 @@ import (
 )
 
 type Server struct {
-	TemporalClient *temporal.Client
-	Port           string
-	LogDirectory   string
+	TemporalClient   *temporal.Client
+	StationsEndpoint string
+	Port             string
+	LogDirectory     string
 }
 
 func (s *Server) RegisterHandlersAndServe() error {
@@ -21,7 +22,7 @@ func (s *Server) RegisterHandlersAndServe() error {
 	s.createMessageLogFiles()
 	router := mux.NewRouter()
 
-	router.HandleFunc("/warningmessage", s.CreateWarningMessage).Methods("POST")
+	router.HandleFunc("/warningmessage", s.SendWarningMessageToAllReceivers).Methods("POST")
 
 	println("Server listening on port " + s.Port)
 	err := http.ListenAndServe(":"+s.Port, router)

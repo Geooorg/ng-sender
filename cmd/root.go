@@ -16,8 +16,9 @@ import (
 var cfgFile string
 
 type config struct {
-	ServerConfig serverConfig   `mapstructure:"http"`
-	Temporal     temporalConfig `mapstructure:"temporal"`
+	ServerConfig   serverConfig         `mapstructure:"http"`
+	Temporal       temporalConfig       `mapstructure:"temporal"`
+	CentralService centralServiceConfig `mapstructure:"centralService"`
 }
 
 type temporalConfig struct {
@@ -30,6 +31,13 @@ type serverConfig struct {
 	LogDirectory struct {
 		Directory string `mapstructure:"directory"`
 	} `mapstructure:"log"`
+}
+
+type centralServiceConfig struct {
+	Url       string `mapstructure:"url"`
+	Endpoints struct {
+		Stations string `mapstructure:"stations"`
+	} `mapstructure:"endpoints"`
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -103,14 +111,15 @@ var serveHttpCmd = &cobra.Command{
 
 		//temporalClient, err := setupTemporalClient(cfg)
 		//if err != nil {
-		//	glog.Warning("Temporal client could not be created: " + err.Error())
+		//	log.Println("WARN: Temporal client could not be created: " + err.Error())
 		//}
 		//defer temporalClient.Close()
 
 		srv := &server.Server{
 			Port:         cfg.ServerConfig.Port,
 			LogDirectory: cfg.ServerConfig.LogDirectory.Directory,
-			//TemporalClient: &temporalClient,
+			//TemporalClient:   &temporalClient,
+			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 
 		err := srv.RegisterHandlersAndServe()
