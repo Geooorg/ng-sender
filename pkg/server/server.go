@@ -8,6 +8,7 @@ import (
 	"net/http"
 	c "ng-receiver/pkg/common"
 	"os"
+	"time"
 )
 
 type Server struct {
@@ -15,6 +16,12 @@ type Server struct {
 	StationsEndpoint string
 	Port             string
 	LogDirectory     string
+	stationListCache StationListCache
+}
+
+type StationListCache struct {
+	StationsList StationsListDto
+	LastUpdated  time.Time
 }
 
 func (s *Server) RegisterHandlersAndServe() error {
@@ -24,12 +31,26 @@ func (s *Server) RegisterHandlersAndServe() error {
 
 	router.HandleFunc("/warningmessage", s.SendWarningMessageToAllReceivers).Methods("POST")
 
+	s.updateStationsList()
+
 	println("Server listening on port " + s.Port)
 	err := http.ListenAndServe(":"+s.Port, router)
 	if err != nil {
 		log.Fatal("HTTP server could not be started", err)
 	}
 	return err
+}
+
+func (s *Server) updateStationsList() {
+
+	stations, err := s.fetchStationsList()
+	if err == nil {
+		s.stationListCache.StationsList = stations
+		s.stationListCache.LastUpdated = time.Now()
+	} else {
+		println("WARN: Could not update the stations list")
+	}
+
 }
 
 func (s *Server) createMessageLogFiles() {

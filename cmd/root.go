@@ -126,6 +126,7 @@ var serveHttpCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("Could not start http server", err)
 		}
+
 	},
 }
 
