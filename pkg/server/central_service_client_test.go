@@ -2,6 +2,12 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+
+	//"github.com/jarcoal/httpmock"
+	//. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -25,9 +31,32 @@ const givenReceiversJson = `{
         "name": "Stationen",
         "category": "STATION"
       }
-     }
+     },
+
+	  {
+		  "id": "DE-HH-GS-SI",
+		  "name": "Hamburg Sirene 1",
+		  "receiverType": {
+			"name": "Sirene",
+			"category": "SIRENE"
+		  }
+       }
    ]
   }`
+
+//var _ = BeforeSuite(func() {
+//	// block all HTTP requests
+//	httpmock.Activate()
+//})
+//
+//var _ = BeforeEach(func() {
+//	// remove any mocks
+//	httpmock.Reset()
+//})
+//
+//var _ = AfterSuite(func() {
+//	httpmock.DeactivateAndReset()
+//})
 
 func Test_JsonIsParsed(t *testing.T) {
 	println(givenReceiversJson)
@@ -35,7 +64,7 @@ func Test_JsonIsParsed(t *testing.T) {
 	err := json.Unmarshal([]byte(givenReceiversJson), &stations)
 
 	assert.Nil(t, err)
-	assert.Equal(t, len(stations.Receivers), 1)
+	assert.Equal(t, len(stations.Receivers), 2)
 	assert.Equal(t, stations.Receivers[0].ID, "DE-HH-GS-19210")
 	assert.Equal(t, stations.Receivers[0].Name, "Hamburg 19210 - DE-HH-GS-019210")
 	assert.Equal(t, stations.Receivers[0].ReceiverType.Name, "Stationen")
@@ -47,4 +76,25 @@ func Test_JsonIsParsed(t *testing.T) {
 	assert.Equal(t, stations.Receivers[0].Hosts[1].Hostname, "host2.tld")
 	assert.Equal(t, stations.Receivers[0].Hosts[1].Port, "1111")
 
+}
+
+func Test_FetchStationsList_FiltersStations(t *testing.T) {
+	// given
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, givenReceiversJson)
+	}))
+	defer svr.Close()
+
+	s := Server{StationsEndpoint: svr.URL}
+
+	// when
+	stations, err := s.fetchStationsList()
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, len(stations.Receivers), 2)
+	assert.Equal(t, stations.Receivers[0].ID, "DE-HH-GS-19210")
+	assert.Equal(t, stations.Receivers[0].Name, "Hamburg 19210 - DE-HH-GS-019210")
+	assert.Equal(t, stations.Receivers[0].ReceiverType.Name, "Stationen")
+	assert.Equal(t, stations.Receivers[0].ReceiverType.Category, "STATION")
 }

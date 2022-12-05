@@ -42,13 +42,22 @@ func (s *Server) RegisterHandlersAndServe() error {
 }
 
 func (s *Server) updateStationsList() {
+	filteredStations := StationsListDto{}
+	const receiverTypeStationFilter = "STATION"
 
 	stations, err := s.fetchStationsList()
-	if err == nil {
-		s.stationListCache.StationsList = stations
+	if err == nil && len(stations.Receivers) > 0 {
+		for _, r := range stations.Receivers {
+
+			if r.ReceiverType.Category == receiverTypeStationFilter {
+				filteredStations.Receivers = append(filteredStations.Receivers, r)
+			}
+		}
+
+		s.stationListCache.StationsList = filteredStations
 		s.stationListCache.LastUpdated = time.Now()
 	} else {
-		println("WARN: Could not update the stations list")
+		println("WARN: Could not update the stations list or list was empty")
 	}
 
 }

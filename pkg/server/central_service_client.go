@@ -24,6 +24,7 @@ type StationsListDto struct {
 
 func (s *Server) fetchStationsList() (StationsListDto, error) {
 
+	println("Using endpoint " + s.StationsEndpoint)
 	res, err := httpclient.NewClient().Get(s.StationsEndpoint)
 
 	if err != nil {
