@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func SendToReceiversWF(ctx workflow.Context, warningMessage common.MessageEnvelope, stationId string, hostAndPort string) {
+func SendToReceiversWF(ctx workflow.Context, warningMessage common.MessageEnvelope, stationId string, hostAndPort string) (bool, error) {
 	//logger := workflow.GetLogger(ctx)
 
 	//var activities *WarningMessageActivities
@@ -25,4 +25,6 @@ func SendToReceiversWF(ctx workflow.Context, warningMessage common.MessageEnvelo
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, options)
+
+	return true, nil
 }

@@ -1,0 +1,13 @@
+# send a message
+POST {{baseUrl}}/warningmessage
+Content-Type: application/json
+
+{
+  "uuid": "2ead8924-233e-4efa-887d-c8e2ab4c2f1a",
+  "messageType": "warningMessage",
+  "objectNode": "{}",
+  "sentAtTimestamp": 1670269552,
+  "warnrechnerId": "3",
+  "warnrechnerStationId": "DE-BY-GS-3331",
+  "warnrechnerHostname": "localhost:3331"
+}

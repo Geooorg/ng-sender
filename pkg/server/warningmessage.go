@@ -2,8 +2,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	temporal "go.temporal.io/sdk/client"
 	"log"
 	"net/http"
@@ -15,14 +16,42 @@ func (s *Server) SendWarningMessageToAllReceivers(w http.ResponseWriter, r *http
 
 	println("received warning message")
 
-	// TODO extract MessageEnvelope, write HTTP test file
-	newUUID, _ := uuid.NewUUID()
-	s.LogMessage(common.WarningMessage, newUUID, "HH-GS-42")
+	var envelope common.MessageEnvelope
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&envelope)
+	if err != nil {
+		println("WARN: message decoding failed", err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
 
-	s.sendToReceivers(context.Background(), nil)
+	err = validateRequest(envelope)
+	if err != nil {
+		println("WARN: message validation failed", err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	s.LogMessage(common.WarningMessage, envelope.UUID, envelope.WarnrechnerStationId)
+
+	s.sendToReceivers(context.Background(), envelope)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+func validateRequest(e common.MessageEnvelope) error {
+	expectedMessageType := common.AsString(common.WarningMessage)
+
+	if e.MessageType != common.AsString(common.WarningMessage) {
+		return errors.New("MessageType was not as expected ' " + expectedMessageType + "'.")
+	}
+	if e.UUID.String() == "" {
+		return errors.New("UUID must not be empty")
+	}
+	if e.WarnrechnerStationId == "" {
+		return errors.New("WarnrechnerStationId must not be empty")
+	}
+
+	return nil
 }
 
 const queueName = "warningMessages"

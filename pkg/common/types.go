@@ -30,11 +30,11 @@ func AsString(m MessageType) string {
 }
 
 type MessageEnvelope struct {
-	UUID                 uuid.UUID
-	MessageType          string
-	ObjectNode           []byte
-	SentAtTimestamp      int64
-	WarnrechnerId        string
-	WarnrechnerStationId string
-	WarnrechnerHostname  string
+	UUID                 uuid.UUID `json:"uuid"`
+	MessageType          string    `json:"messageType"`
+	ObjectNode           string    `json:"objectNode"` // note this is the actual JSON payload
+	SentAtTimestamp      int64     `json:"sentAtTimestamp"`
+	WarnrechnerId        string    `json:"warnrechnerId"`
+	WarnrechnerStationId string    `json:"warnrechnerStationId"`
+	WarnrechnerHostname  string    `json:"warnrechnerHostname"`
 }

@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	c "ng-sender/pkg/common"
-	"ng-sender/pkg/workflow"
 	"os"
 	"time"
 )
@@ -18,7 +17,6 @@ type Server struct {
 	Port             string
 	LogDirectory     string
 	stationListCache StationListCache
-	workflowClient   workflow.WorkflowClient
 }
 
 type StationListCache struct {
@@ -29,7 +27,6 @@ type StationListCache struct {
 func (s *Server) RegisterHandlersAndServe() error {
 
 	s.createMessageLogFiles()
-	s.workflowClient = workflow.WorkflowClient{TemporalClient: s.TemporalClient}
 
 	router := mux.NewRouter()
 
@@ -80,7 +77,7 @@ func (s *Server) stationListNeedsUpdate() bool {
 func (s *Server) createMessageLogFiles() {
 
 	if _, err := os.Stat(s.LogDirectory); os.IsNotExist(err) {
-		log.Fatal("Log Directory does not exist", err)
+		log.Fatal("Log Directory does not exist ", err)
 	}
 
 	logFileTypes := []c.MessageType{c.WarningMessage, c.ExerciseWarningMessage, c.InfoMessage, c.ExerciseInfoMessage}
