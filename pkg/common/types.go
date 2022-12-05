@@ -1,6 +1,9 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/google/uuid"
+)
 
 type MessageType int64
 
@@ -14,14 +17,19 @@ const (
 func AsString(m MessageType) string {
 	switch m {
 	case WarningMessage:
-		return "WarningMessage"
+		return "warningMessage"
 	case ExerciseWarningMessage:
-		return "ExerciseInfoMessage"
+		return "exerciseInfoMessage"
 	case InfoMessage:
-		return "InfoMessage"
+		return "infoMessage"
 	case ExerciseInfoMessage:
-		return "ExerciseInfoMessage"
+		return "exerciseInfoMessage"
 	default:
 		return fmt.Sprintf("Unknown type: (%d)", m)
 	}
+}
+
+type MessageEnvelope struct {
+	UUID    uuid.UUID
+	content []byte
 }
