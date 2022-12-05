@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"io"
-	c "ng-receiver/pkg/common"
+	c "ng-sender/pkg/common"
 	"os"
 	"strings"
 	"time"

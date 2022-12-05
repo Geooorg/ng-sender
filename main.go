@@ -1,6 +1,6 @@
 package main
 
-import "ng-receiver/cmd"
+import "ng-sender/cmd"
 
 func main() {
 	cmd.Execute()

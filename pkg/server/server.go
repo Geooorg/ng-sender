@@ -6,7 +6,8 @@ import (
 	temporal "go.temporal.io/sdk/client"
 	"log"
 	"net/http"
-	c "ng-receiver/pkg/common"
+	c "ng-sender/pkg/common"
+	"ng-sender/pkg/workflow"
 	"os"
 	"time"
 )
@@ -17,6 +18,7 @@ type Server struct {
 	Port             string
 	LogDirectory     string
 	stationListCache StationListCache
+	workflowClient   workflow.WorkflowClient
 }
 
 type StationListCache struct {
@@ -27,6 +29,8 @@ type StationListCache struct {
 func (s *Server) RegisterHandlersAndServe() error {
 
 	s.createMessageLogFiles()
+	s.workflowClient = workflow.WorkflowClient{TemporalClient: s.TemporalClient}
+
 	router := mux.NewRouter()
 
 	router.HandleFunc("/warningmessage", s.SendWarningMessageToAllReceivers).Methods("POST")

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"ng-receiver/pkg/httpclient"
+	"ng-sender/pkg/httpclient"
 )
 
 type StationsListDto struct {

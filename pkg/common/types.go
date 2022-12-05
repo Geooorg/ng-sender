@@ -30,6 +30,11 @@ func AsString(m MessageType) string {
 }
 
 type MessageEnvelope struct {
-	UUID    uuid.UUID
-	content []byte
+	UUID                 uuid.UUID
+	MessageType          string
+	ObjectNode           []byte
+	SentAtTimestamp      int64
+	WarnrechnerId        string
+	WarnrechnerStationId string
+	WarnrechnerHostname  string
 }

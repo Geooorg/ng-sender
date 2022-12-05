@@ -30,7 +30,7 @@ format-go:
 	@golangci-lint run --fix -c .golangci-format.yml
 
 image:
-	docker build -t ng-receiver:1.0.0 .
+	docker build -t ng-sender:1.0.0 .
 
 cross-compile:
 	GOOS=linux GOARCH=arm64 go build -ldflags="-s -w"  -o service .

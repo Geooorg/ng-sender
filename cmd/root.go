@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 	temporal "go.temporal.io/sdk/client"
 	"log"
-	"ng-receiver/pkg/server"
+	"ng-sender/pkg/server"
 	"os"
 	"strings"
 )
@@ -109,20 +109,20 @@ var serveHttpCmd = &cobra.Command{
 		//}
 		//defer nc.Close()
 
-		//temporalClient, err := setupTemporalClient(cfg)
-		//if err != nil {
-		//	log.Println("WARN: Temporal client could not be created: " + err.Error())
-		//}
-		//defer temporalClient.Close()
+		temporalClient, err := setupTemporalClient(cfg)
+		if err != nil {
+			log.Println("WARN: Temporal client could not be created: " + err.Error())
+		}
+		defer temporalClient.Close()
 
 		srv := &server.Server{
-			Port:         cfg.ServerConfig.Port,
-			LogDirectory: cfg.ServerConfig.LogDirectory.Directory,
-			//TemporalClient:   &temporalClient,
+			Port:             cfg.ServerConfig.Port,
+			LogDirectory:     cfg.ServerConfig.LogDirectory.Directory,
+			TemporalClient:   &temporalClient,
 			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 
-		err := srv.RegisterHandlersAndServe()
+		err = srv.RegisterHandlersAndServe()
 		if err != nil {
 			log.Fatal("Could not start http server", err)
 		}
