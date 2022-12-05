@@ -31,7 +31,7 @@ func (s *Server) RegisterHandlersAndServe() error {
 
 	router.HandleFunc("/warningmessage", s.SendWarningMessageToAllReceivers).Methods("POST")
 
-	s.updateStationsList()
+	s.updateStationsListIfNeeded()
 
 	println("Server listening on port " + s.Port)
 	err := http.ListenAndServe(":"+s.Port, router)
@@ -41,25 +41,36 @@ func (s *Server) RegisterHandlersAndServe() error {
 	return err
 }
 
-func (s *Server) updateStationsList() {
+func (s *Server) updateStationsListIfNeeded() {
 	filteredStations := StationsListDto{}
 	const receiverTypeStationFilter = "STATION"
 
-	stations, err := s.fetchStationsList()
-	if err == nil && len(stations.Receivers) > 0 {
-		for _, r := range stations.Receivers {
+	if s.stationListNeedsUpdate() {
 
-			if r.ReceiverType.Category == receiverTypeStationFilter {
-				filteredStations.Receivers = append(filteredStations.Receivers, r)
+		stations, err := s.fetchStationsList()
+
+		if err == nil && len(stations.Receivers) > 0 {
+			for _, r := range stations.Receivers {
+
+				if r.ReceiverType.Category == receiverTypeStationFilter {
+					filteredStations.Receivers = append(filteredStations.Receivers, r)
+				}
 			}
-		}
 
-		s.stationListCache.StationsList = filteredStations
-		s.stationListCache.LastUpdated = time.Now()
+			s.stationListCache.StationsList = filteredStations
+			s.stationListCache.LastUpdated = time.Now()
+		} else {
+			println("WARN: Could not update the stations list or list was empty")
+		}
 	} else {
-		println("WARN: Could not update the stations list or list was empty")
+		println("INFO: No need to update Station list")
 	}
 
+}
+
+func (s *Server) stationListNeedsUpdate() bool {
+	isOlderThanOneHour := time.Since(s.stationListCache.LastUpdated) > 1*time.Hour
+	return len(s.stationListCache.StationsList.Receivers) == 0 || isOlderThanOneHour
 }
 
 func (s *Server) createMessageLogFiles() {

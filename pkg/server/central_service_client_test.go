@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	//"github.com/jarcoal/httpmock"
 	//. "github.com/onsi/ginkgo"
@@ -97,4 +98,97 @@ func Test_FetchStationsList_FiltersStations(t *testing.T) {
 	assert.Equal(t, stations.Receivers[0].Name, "Hamburg 19210 - DE-HH-GS-019210")
 	assert.Equal(t, stations.Receivers[0].ReceiverType.Name, "Stationen")
 	assert.Equal(t, stations.Receivers[0].ReceiverType.Category, "STATION")
+}
+
+func Test_FetchStationsList_UpdatesCacheIfEmpty(t *testing.T) {
+	// given
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, givenReceiversJson)
+	}))
+	defer svr.Close()
+
+	s := Server{StationsEndpoint: svr.URL,
+		stationListCache: StationListCache{
+			StationsList: StationsListDto{},
+		},
+	}
+
+	// when
+	stations, err := s.fetchStationsList()
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, len(stations.Receivers), 2)
+}
+
+func Test_FetchStationsList_UpdatesCacheIfOlderThanOneHour(t *testing.T) {
+	// given
+	var stationsBefore StationsListDto
+	err := json.Unmarshal([]byte(givenReceiversJson), &stationsBefore)
+
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, `{
+		  "receivers": [
+		    {
+		      "id": "DE-HH-GS-19210",
+		      "name": "Updated Name",
+		      "receiverType": {
+		        "name": "Stationen",
+		        "category": "STATION"
+		      }
+		    }
+		  ]
+		}`)
+	}))
+	defer svr.Close()
+
+	s := Server{StationsEndpoint: svr.URL,
+		stationListCache: StationListCache{
+			StationsList: stationsBefore,
+			LastUpdated:  time.Now().Add(-2 * time.Hour),
+		},
+	}
+
+	// when
+	s.updateStationsListIfNeeded()
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, s.stationListCache.StationsList.Receivers[0].Name, "Updated Name")
+}
+
+func Test_FetchStationsList_CacheNotUpdatedIfFresh(t *testing.T) {
+	// given
+	var stationsBefore StationsListDto
+	err := json.Unmarshal([]byte(givenReceiversJson), &stationsBefore)
+
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, `{
+		  "receivers": [
+		    {
+		      "id": "DE-HH-GS-19210",
+		      "name": "Updated Name",
+		      "receiverType": {
+		        "name": "Stationen",
+		        "category": "STATION"
+		      }
+		    }
+		  ]
+		}`)
+	}))
+	defer svr.Close()
+
+	s := Server{StationsEndpoint: svr.URL,
+		stationListCache: StationListCache{
+			StationsList: stationsBefore,
+			LastUpdated:  time.Now().Add(-10 * time.Minute),
+		},
+	}
+
+	// when
+	s.updateStationsListIfNeeded()
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, s.stationListCache.StationsList.Receivers[0].Name, "Hamburg 19210 - DE-HH-GS-019210")
 }
