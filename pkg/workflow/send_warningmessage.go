@@ -4,14 +4,12 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	"ng-sender/pkg/common"
 	"time"
 )
 
-func SendToReceiversWF(ctx workflow.Context, warningMessage common.MessageEnvelope, stationId string, hostAndPort string) (bool, error) {
-	//logger := workflow.GetLogger(ctx)
-
-	//var activities *WarningMessageActivities
+func SendToReceiversWF(ctx workflow.Context, envelopeAsJson []byte, uuid string, hostAndPort string) (time.Time, error) {
+	logger := workflow.GetLogger(ctx)
+	logger.Info("SendToReceiversWF starting for UUID " + uuid + " and stationId on " + hostAndPort)
 
 	retryPolicy := &temporal.RetryPolicy{
 		InitialInterval:    time.Second,
@@ -25,6 +23,14 @@ func SendToReceiversWF(ctx workflow.Context, warningMessage common.MessageEnvelo
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, options)
+	var a *WarningMessageActivities
 
-	return true, nil
+	var finishedAt time.Time
+
+	if err := workflow.ExecuteActivity(ctx, a.SendWarningMessageToHost, envelopeAsJson, uuid, hostAndPort).Get(ctx, &finishedAt); err != nil {
+		logger.Error("SendWarningMessageToHost Workflow: Activity 'Send' failed.", "Error", err.Error())
+		return time.Now(), err
+	}
+
+	return time.Now(), nil
 }

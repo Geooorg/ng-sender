@@ -14,7 +14,7 @@ import (
 
 func (s *Server) SendWarningMessageToAllReceivers(w http.ResponseWriter, r *http.Request) {
 
-	println("received warning message")
+	println("sending warning message to all receivers")
 
 	var envelope common.MessageEnvelope
 	dec := json.NewDecoder(r.Body)
@@ -57,25 +57,31 @@ func validateRequest(e common.MessageEnvelope) error {
 const queueName = "warningMessages"
 const workflowIDPrefix = "warningMessage-"
 
-func (s *Server) sendToReceivers(ctx context.Context, warningMessage common.MessageEnvelope) {
+func (s *Server) sendToReceivers(ctx context.Context, envelope common.MessageEnvelope) error {
 
 	s.updateStationsListIfNeeded()
+
+	envelopeAsJson, err := json.Marshal(envelope)
+	if err != nil {
+		log.Println("WARN: Could not marshall envelope to JSON!", err)
+		return err
+	}
 
 	// start workflow for each host to send message to
 	for _, receiver := range s.stationListCache.StationsList.Receivers {
 		for _, host := range receiver.Hosts {
 
-			hostAndPort := host.Hostname + host.Port
-			log.Println(fmt.Printf("INFO: starting workflow for warningMessage %s, station %s on host %s",
-				warningMessage.UUID.String(), receiver.ID, hostAndPort,
+			hostAndPort := host.Hostname + ":" + host.Port
+			log.Println(fmt.Printf("INFO: starting workflow for envelope %s, station %s on host %s",
+				envelope.UUID.String(), receiver.ID, hostAndPort,
 			))
 
-			workflowID := workflowIDPrefix + warningMessage.UUID.String() + "_" + receiver.ID + "_" + hostAndPort
+			workflowID := workflowIDPrefix + envelope.UUID.String() + "_" + receiver.ID + "_" + hostAndPort
 
 			workflowExecution, err := (*s.TemporalClient).ExecuteWorkflow(ctx, temporal.StartWorkflowOptions{
 				ID:        workflowID,
 				TaskQueue: queueName,
-			}, workflow.SendToReceiversWF, warningMessage, hostAndPort)
+			}, workflow.SendToReceiversWF, envelopeAsJson, envelope.UUID.String(), hostAndPort)
 
 			if err != nil {
 				log.Println("WARN: Unable to execute workflow with ID", workflowID, err)
@@ -86,4 +92,5 @@ func (s *Server) sendToReceivers(ctx context.Context, warningMessage common.Mess
 
 	}
 
+	return nil
 }
