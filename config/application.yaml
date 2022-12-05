@@ -14,4 +14,4 @@ nats:
 
 temporal:
   address: localhost:7233
-  namespace: sender-service
+  namespace: default
