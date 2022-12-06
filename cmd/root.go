@@ -3,7 +3,9 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mitchellh/go-homedir"
+	"github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	temporal "go.temporal.io/sdk/client"
@@ -11,6 +13,7 @@ import (
 	"ng-sender/pkg/server"
 	"os"
 	"strings"
+	"time"
 )
 
 var cfgFile string
@@ -19,6 +22,11 @@ type config struct {
 	ServerConfig   serverConfig         `mapstructure:"http"`
 	Temporal       temporalConfig       `mapstructure:"temporal"`
 	CentralService centralServiceConfig `mapstructure:"centralService"`
+
+	Nats struct {
+		URL       string `mapstructure:"url"`
+		CredsFile string `mapstructure:"creds-file"`
+	} `mapstructure:"nats"`
 }
 
 type temporalConfig struct {
@@ -99,15 +107,13 @@ var serveHttpCmd = &cobra.Command{
 			log.Fatal("Port must be configured")
 		}
 
-		//ctx := context.Background()
-
-		//nc, err := createNatsClient(cfg)
-		//if err != nil {
-		//	fmt.Printf("unable to create connection %s\n", err)
-		//	fmt.Printf("nats config: %v\n", cfg.Nats)
-		//	return
-		//}
-		//defer nc.Close()
+		natsConnection, err := createNatsClient(cfg)
+		if err != nil {
+			fmt.Printf("WARN: Unable to create NATS connection %s\n", err)
+			fmt.Printf("NATS config: %v\n", cfg.Nats)
+			return
+		}
+		defer natsConnection.Close()
 
 		temporalClient, err := setupTemporalClient(cfg)
 		if err != nil {
@@ -119,6 +125,7 @@ var serveHttpCmd = &cobra.Command{
 			Port:             cfg.ServerConfig.Port,
 			LogDirectory:     cfg.ServerConfig.LogDirectory.Directory,
 			TemporalClient:   &temporalClient,
+			NatsConnection:   natsConnection,
 			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 
@@ -137,4 +144,22 @@ func setupTemporalClient(cfg *config) (temporal.Client, error) {
 	}
 
 	return temporal.Dial(temporalOptions)
+}
+
+func createNatsClient(cfg *config) (*nats.Conn, error) {
+	id, _ := uuid.NewRandom()
+	clientID := "sender-service-" + id.String()
+
+	options := []nats.Option{
+		nats.Name(clientID),
+		nats.PingInterval(1 * time.Second),
+		nats.Timeout(5 * time.Second),
+	}
+
+	if cfg.Nats.CredsFile != "" {
+		fmt.Printf("Using nats credentials file: %s\n", cfg.Nats.CredsFile)
+		options = append(options, nats.UserCredentials(cfg.Nats.CredsFile))
+	}
+
+	return nats.Connect(cfg.Nats.URL, options...)
 }

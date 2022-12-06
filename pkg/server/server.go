@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"github.com/gorilla/mux"
+	"github.com/nats-io/nats.go"
 	temporal "go.temporal.io/sdk/client"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 type Server struct {
 	TemporalClient   *temporal.Client
+	NatsConnection   *nats.Conn
 	StationsEndpoint string
 	Port             string
 	LogDirectory     string
