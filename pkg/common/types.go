@@ -1,6 +1,8 @@
 package common
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -37,4 +39,19 @@ type MessageEnvelope struct {
 	WarnrechnerId        string    `json:"warnrechnerId"`
 	WarnrechnerStationId string    `json:"warnrechnerStationId"`
 	WarnrechnerHostname  string    `json:"warnrechnerHostname"`
+}
+
+func WarningMessageToEnvelope(b []byte) (MessageEnvelope, error) {
+	var envelope MessageEnvelope
+	dec := json.NewDecoder(bytes.NewReader(b))
+	err := dec.Decode(&envelope)
+	if err != nil {
+		println("WARN: message decoding failed", err)
+
+	}
+	return envelope, err
+}
+
+func WarningMessageToJson(envelope MessageEnvelope) ([]byte, error) {
+	return json.Marshal(envelope)
 }

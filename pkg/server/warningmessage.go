@@ -2,40 +2,76 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nats-io/nats.go"
 	temporal "go.temporal.io/sdk/client"
+	"io"
 	"log"
 	"net/http"
 	"ng-sender/pkg/common"
 	"ng-sender/pkg/workflow"
 )
 
-func (s *Server) SendWarningMessageToAllReceivers(w http.ResponseWriter, r *http.Request) {
+type WarningMessageSender interface {
+	sendWarningMessageToAllReceivers(envelope common.MessageEnvelope) error
+}
 
-	println("sending warning message to all receivers")
+const topic = "warningMessageReceived_Central"
 
-	var envelope common.MessageEnvelope
-	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&envelope)
+func (s *Server) OnWarningMessageReceivedNATS(m *nats.Msg) {
+	println("OnWarningMessageReceivedNATS")
+
+	envelope, err := common.WarningMessageToEnvelope([]byte(m.Data))
+
+	if err != nil {
+		log.Println("WARN: Could not convert warning message to JSON received by NATS")
+	}
+	s.sendWarningMessageToAllReceivers(envelope)
+}
+
+func (s *Server) OnWarningMessageReceivedHTTP(w http.ResponseWriter, r *http.Request) {
+
+	bytes, err := io.ReadAll(r.Body)
+	envelope, err := common.WarningMessageToEnvelope(bytes)
 	if err != nil {
 		println("WARN: message decoding failed", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	err = validateRequest(envelope)
+	err = s.sendWarningMessageToAllReceivers(envelope)
 	if err != nil {
-		println("WARN: message validation failed", err)
+		println("WARN: Could not call 'sendWarningMessageToAllReceivers'", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-
-	s.LogMessage(common.WarningMessage, envelope.UUID, envelope.WarnrechnerStationId)
-
-	s.sendToReceivers(context.Background(), envelope)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+func (s *Server) sendWarningMessageToAllReceivers(envelope common.MessageEnvelope) error {
+
+	println("Sending warning message to all receivers")
+
+	err := validateRequest(envelope)
+	if err != nil {
+		println("WARN: message validation failed", err)
+		return err
+	}
+
+	json, err := common.WarningMessageToJson(envelope)
+	if err != nil {
+		println("WARN: message validation failed", err)
+		return err
+	}
+
+	s.PersistMessage(common.WarningMessage, json, envelope.UUID, envelope.WarnrechnerStationId)
+
+	s.startSendToReceiversWorkflow(context.Background(), envelope)
+
+	return err
 }
 
 func validateRequest(e common.MessageEnvelope) error {
@@ -57,11 +93,11 @@ func validateRequest(e common.MessageEnvelope) error {
 const queueName = "warningMessages"
 const workflowIDPrefix = "warningMessage-"
 
-func (s *Server) sendToReceivers(ctx context.Context, envelope common.MessageEnvelope) error {
+func (s *Server) startSendToReceiversWorkflow(ctx context.Context, envelope common.MessageEnvelope) error {
 
 	s.updateStationsListIfNeeded()
 
-	envelopeAsJson, err := json.Marshal(envelope)
+	envelopeAsJson, err := common.WarningMessageToJson(envelope)
 	if err != nil {
 		log.Println("WARN: Could not marshall envelope to JSON!", err)
 		return err

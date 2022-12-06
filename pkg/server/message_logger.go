@@ -10,8 +10,18 @@ import (
 	"time"
 )
 
-func (s *Server) LogMessage(messageType c.MessageType, uuid uuid.UUID, stationId string) {
+func (s *Server) PersistMessage(messageType c.MessageType, messageEnvelopeJson []byte, uuid uuid.UUID, stationId string) {
 
+	// TODO persist JSON
+	s.logEvent(messageType, uuid, stationId)
+}
+
+func (s *Server) determineLogFileName(messageType c.MessageType) string {
+	typeName := c.AsString(messageType)
+	return s.LogDirectory + "/" + typeName + ".log"
+}
+
+func (s *Server) logEvent(messageType c.MessageType, uuid uuid.UUID, stationId string) {
 	timestamp := fmt.Sprintf("%s", time.Now().Format(time.RFC3339))
 	fields := []string{timestamp, fmt.Sprint(c.AsString(messageType)), uuid.String(), stationId}
 	msg := strings.Join(fields, "\t") + "\n"

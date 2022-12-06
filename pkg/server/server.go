@@ -32,15 +32,22 @@ func (s *Server) RegisterHandlersAndServe() error {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/warningmessage", s.SendWarningMessageToAllReceivers).Methods("POST")
+	router.HandleFunc("/warningmessage", s.OnWarningMessageReceivedHTTP).Methods("POST")
+	subscr, err := s.NatsClient.Subscribe(topic, s.OnWarningMessageReceivedNATS)
+
+	if err != nil {
+		log.Fatalln("Could not subscribe to topic "+topic, err)
+	}
+	println("subscribed to NATS topic "+topic, subscr.IsValid())
 
 	s.updateStationsListIfNeeded()
 
 	println("Server listening on port " + s.Port)
-	err := http.ListenAndServe(":"+s.Port, router)
+	err = http.ListenAndServe(":"+s.Port, router)
 	if err != nil {
-		log.Fatal("HTTP server could not be started", err)
+		log.Fatalln("HTTP server could not be started", err)
 	}
+
 	return err
 }
 
@@ -95,9 +102,4 @@ func (s *Server) createMessageLogFiles() {
 		}
 
 	}
-}
-
-func (s *Server) determineLogFileName(messageType c.MessageType) string {
-	typeName := c.AsString(messageType)
-	return s.LogDirectory + "/" + typeName + ".log"
 }
