@@ -23,15 +23,17 @@ type config struct {
 	Temporal       temporalConfig       `mapstructure:"temporal"`
 	CentralService centralServiceConfig `mapstructure:"centralService"`
 
-	Nats struct {
-		URL       string `mapstructure:"url"`
-		CredsFile string `mapstructure:"creds-file"`
-	} `mapstructure:"nats"`
+	Nats natsConfig `mapstructure:"nats"`
 }
 
 type temporalConfig struct {
 	Address   string `mapstructure:"address"`
 	Namespace string `mapstructure:"namespace"`
+}
+
+type natsConfig struct {
+	URL       string `mapstructure:"url"`
+	CredsFile string `mapstructure:"creds-file"`
 }
 
 type serverConfig struct {
@@ -107,7 +109,7 @@ var serveHttpCmd = &cobra.Command{
 			log.Fatal("Port must be configured")
 		}
 
-		natsConnection, err := createNatsClient(cfg)
+		natsConnection, err := getNatsClient(cfg)
 		if err != nil {
 			fmt.Printf("WARN: Unable to create NATS connection %s\n", err)
 			fmt.Printf("NATS config: %v\n", cfg.Nats)
@@ -115,7 +117,7 @@ var serveHttpCmd = &cobra.Command{
 		}
 		defer natsConnection.Close()
 
-		temporalClient, err := setupTemporalClient(cfg)
+		temporalClient, err := getTemporalClient(cfg)
 		if err != nil {
 			log.Println("WARN: Temporal client could not be created: " + err.Error())
 		}
@@ -125,7 +127,7 @@ var serveHttpCmd = &cobra.Command{
 			Port:             cfg.ServerConfig.Port,
 			LogDirectory:     cfg.ServerConfig.LogDirectory.Directory,
 			TemporalClient:   &temporalClient,
-			NatsConnection:   natsConnection,
+			NatsClient:       natsConnection,
 			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 
@@ -137,7 +139,7 @@ var serveHttpCmd = &cobra.Command{
 	},
 }
 
-func setupTemporalClient(cfg *config) (temporal.Client, error) {
+func getTemporalClient(cfg *config) (temporal.Client, error) {
 	temporalOptions := temporal.Options{
 		HostPort:  cfg.Temporal.Address,
 		Namespace: cfg.Temporal.Namespace,
@@ -146,7 +148,7 @@ func setupTemporalClient(cfg *config) (temporal.Client, error) {
 	return temporal.Dial(temporalOptions)
 }
 
-func createNatsClient(cfg *config) (*nats.Conn, error) {
+func getNatsClient(cfg *config) (*nats.Conn, error) {
 	id, _ := uuid.NewRandom()
 	clientID := "sender-service-" + id.String()
 

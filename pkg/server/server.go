@@ -14,7 +14,7 @@ import (
 
 type Server struct {
 	TemporalClient   *temporal.Client
-	NatsConnection   *nats.Conn
+	NatsClient       *nats.Conn
 	StationsEndpoint string
 	Port             string
 	LogDirectory     string

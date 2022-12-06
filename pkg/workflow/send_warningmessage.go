@@ -28,7 +28,12 @@ func SendToReceiversWF(ctx workflow.Context, envelopeAsJson []byte, uuid string,
 	var finishedAt time.Time
 
 	if err := workflow.ExecuteActivity(ctx, a.SendWarningMessageToHost, envelopeAsJson, uuid, hostAndPort).Get(ctx, &finishedAt); err != nil {
-		logger.Error("SendWarningMessageToHost Workflow: Activity 'Send' failed.", "Error", err.Error())
+		logger.Error("SendWarningMessageToHost Activity failed.", "Error", err.Error())
+		return time.Now(), err
+	}
+
+	if err := workflow.ExecuteActivity(ctx, a.PublishEvent, envelopeAsJson, uuid).Get(ctx, &finishedAt); err != nil {
+		logger.Error("PublishEvent failed.", "Error", err.Error())
 		return time.Now(), err
 	}
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"flag"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.temporal.io/sdk/worker"
@@ -21,24 +22,26 @@ var workerCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		temporalClient, err := setupTemporalClient(cfg)
+		temporalClient, err := getTemporalClient(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer temporalClient.Close()
 
-		//nc, err := createNatsClient(cfg)
-		//if err != nil {
-		//	fmt.Printf("unable to create connection %s\n", err)
-		//	fmt.Printf("nats config: %v\n", cfg.Nats)
-		//	return
-		//}
-		//defer nc.Close()
+		natsClient, err := getNatsClient(cfg)
+		if err != nil {
+			fmt.Printf("unable to create connection %s\n", err)
+			fmt.Printf("nats config: %v\n", cfg.Nats)
+			return
+		}
+		defer natsClient.Close()
 
 		w := worker.New(temporalClient, "warningMessages", worker.Options{})
 		defer w.Stop()
 
-		activities := &wf.WarningMessageActivities{}
+		activities := &wf.WarningMessageActivities{
+			NatsClient: natsClient,
+		}
 
 		w.RegisterActivity(activities)
 		w.RegisterWorkflow(wf.SendToReceiversWF)
