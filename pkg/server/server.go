@@ -7,6 +7,7 @@ import (
 	temporal "go.temporal.io/sdk/client"
 	"log"
 	"net/http"
+	"ng-sender/cmd"
 	c "ng-sender/pkg/common"
 	"os"
 	"time"
@@ -15,6 +16,7 @@ import (
 type Server struct {
 	TemporalClient   *temporal.Client
 	NatsClient       *nats.Conn
+	TopicsConfig     cmd.TopicsConfig
 	StationsEndpoint string
 	Port             string
 	LogDirectory     string
@@ -31,6 +33,8 @@ func (s *Server) RegisterHandlersAndServe() error {
 	s.createMessageLogFiles()
 
 	router := mux.NewRouter()
+
+	topicWarningMessageReceived := s.TopicsConfig.WarningMessageReceived
 
 	router.HandleFunc("/warningmessage", s.OnWarningMessageReceivedHTTP).Methods("POST")
 	subscription, err := s.NatsClient.Subscribe(topicWarningMessageReceived, s.OnWarningMessageReceivedNATS)

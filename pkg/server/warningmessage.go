@@ -17,8 +17,6 @@ type WarningMessageSender interface {
 	sendWarningMessageToAllReceivers(envelope common.MessageEnvelope) error
 }
 
-const topicWarningMessageReceived = "warningMessage.received.sender-service.central"
-
 func (s *Server) OnWarningMessageReceivedNATS(m *nats.Msg) {
 	println("OnWarningMessageReceivedNATS")
 

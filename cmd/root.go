@@ -32,8 +32,14 @@ type temporalConfig struct {
 }
 
 type natsConfig struct {
-	URL       string `mapstructure:"url"`
-	CredsFile string `mapstructure:"creds-file"`
+	URL          string       `mapstructure:"url"`
+	CredsFile    string       `mapstructure:"creds-file"`
+	TopicsConfig TopicsConfig `mapstructure:"topics"`
+}
+
+type TopicsConfig struct {
+	WarningMessageReceived string `mapstructure:"warningMessageReceived"`
+	WarningMessageSent     string `mapstructure:"warningMessageSent"`
 }
 
 type serverConfig struct {
@@ -128,6 +134,7 @@ var serveHttpCmd = &cobra.Command{
 			LogDirectory:     cfg.ServerConfig.LogDirectory.Directory,
 			TemporalClient:   &temporalClient,
 			NatsClient:       natsConnection,
+			TopicsConfig:     cfg.Nats.TopicsConfig,
 			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 

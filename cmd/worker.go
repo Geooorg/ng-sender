@@ -40,7 +40,8 @@ var workerCmd = &cobra.Command{
 		defer w.Stop()
 
 		activities := &wf.WarningMessageActivities{
-			NatsClient: natsClient,
+			NatsClient:   natsClient,
+			TopicsConfig: cfg.Nats.TopicsConfig,
 		}
 
 		w.RegisterActivity(activities)
