@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"go.temporal.io/sdk/worker"
 	"log"
+	"ng-sender/pkg/common"
 	wf "ng-sender/pkg/workflow"
 )
 
@@ -40,8 +41,11 @@ var workerCmd = &cobra.Command{
 		defer w.Stop()
 
 		activities := &wf.WarningMessageActivities{
-			NatsClient:   natsClient,
-			TopicsConfig: cfg.Nats.TopicsConfig,
+			NatsClient: natsClient,
+			TopicsConfig: common.TopicsConfig{
+				WarningMessageSent:     cfg.Nats.TopicsConfig.WarningMessageSent,
+				WarningMessageReceived: cfg.Nats.TopicsConfig.WarningMessageReceived,
+			},
 		}
 
 		w.RegisterActivity(activities)

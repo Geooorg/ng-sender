@@ -7,7 +7,6 @@ import (
 	temporal "go.temporal.io/sdk/client"
 	"log"
 	"net/http"
-	"ng-sender/cmd"
 	c "ng-sender/pkg/common"
 	"os"
 	"time"
@@ -16,7 +15,7 @@ import (
 type Server struct {
 	TemporalClient   *temporal.Client
 	NatsClient       *nats.Conn
-	TopicsConfig     cmd.TopicsConfig
+	TopicsConfig     c.TopicsConfig
 	StationsEndpoint string
 	Port             string
 	LogDirectory     string

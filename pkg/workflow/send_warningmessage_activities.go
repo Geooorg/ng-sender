@@ -6,13 +6,13 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.temporal.io/sdk/activity"
 	"net/http"
-	"ng-sender/cmd"
+	c "ng-sender/pkg/common"
 	"time"
 )
 
 type WarningMessageActivities struct {
 	NatsClient   *nats.Conn
-	TopicsConfig cmd.TopicsConfig
+	TopicsConfig c.TopicsConfig
 }
 
 const warningMessagePath = "/warningMessage"

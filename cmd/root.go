@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	temporal "go.temporal.io/sdk/client"
 	"log"
+	"ng-sender/pkg/common"
 	"ng-sender/pkg/server"
 	"os"
 	"strings"
@@ -130,11 +131,14 @@ var serveHttpCmd = &cobra.Command{
 		defer temporalClient.Close()
 
 		srv := &server.Server{
-			Port:             cfg.ServerConfig.Port,
-			LogDirectory:     cfg.ServerConfig.LogDirectory.Directory,
-			TemporalClient:   &temporalClient,
-			NatsClient:       natsConnection,
-			TopicsConfig:     cfg.Nats.TopicsConfig,
+			Port:           cfg.ServerConfig.Port,
+			LogDirectory:   cfg.ServerConfig.LogDirectory.Directory,
+			TemporalClient: &temporalClient,
+			NatsClient:     natsConnection,
+			TopicsConfig: common.TopicsConfig{
+				WarningMessageSent:     cfg.Nats.TopicsConfig.WarningMessageSent,
+				WarningMessageReceived: cfg.Nats.TopicsConfig.WarningMessageReceived,
+			},
 			StationsEndpoint: cfg.CentralService.Url + cfg.CentralService.Endpoints.Stations,
 		}
 
