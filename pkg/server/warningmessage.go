@@ -17,12 +17,12 @@ type WarningMessageSender interface {
 	sendWarningMessageToAllReceivers(envelope common.MessageEnvelope) error
 }
 
-const topic = "warningMessageReceived_Central"
+const topicWarningMessageReceived = "warningMessage.received.sender-service.central"
 
 func (s *Server) OnWarningMessageReceivedNATS(m *nats.Msg) {
 	println("OnWarningMessageReceivedNATS")
 
-	envelope, err := common.WarningMessageToEnvelope([]byte(m.Data))
+	envelope, err := common.WarningMessageToEnvelope(m.Data)
 
 	if err != nil {
 		log.Println("WARN: Could not convert warning message to JSON received by NATS")
@@ -63,7 +63,7 @@ func (s *Server) sendWarningMessageToAllReceivers(envelope common.MessageEnvelop
 
 	json, err := common.WarningMessageToJson(envelope)
 	if err != nil {
-		println("WARN: message validation failed", err)
+		println("WARN: message conversion to JSON failed", err)
 		return err
 	}
 

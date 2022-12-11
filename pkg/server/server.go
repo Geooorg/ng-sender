@@ -33,12 +33,12 @@ func (s *Server) RegisterHandlersAndServe() error {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/warningmessage", s.OnWarningMessageReceivedHTTP).Methods("POST")
-	subscr, err := s.NatsClient.Subscribe(topic, s.OnWarningMessageReceivedNATS)
+	subscription, err := s.NatsClient.Subscribe(topicWarningMessageReceived, s.OnWarningMessageReceivedNATS)
 
 	if err != nil {
-		log.Fatalln("Could not subscribe to topic "+topic, err)
+		log.Fatalln("Could not subscribe to topicWarningMessageReceived "+topicWarningMessageReceived, err)
 	}
-	println("subscribed to NATS topic "+topic, subscr.IsValid())
+	println("subscribed to NATS topicWarningMessageReceived "+topicWarningMessageReceived, subscription.IsValid())
 
 	s.updateStationsListIfNeeded()
 

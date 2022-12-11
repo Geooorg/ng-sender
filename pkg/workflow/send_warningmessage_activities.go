@@ -14,7 +14,7 @@ type WarningMessageActivities struct {
 }
 
 const warningMessagePath = "/warningMessage"
-const topic = "warningMessageSent_Central"
+const topicWarningMessageSent = "warningMessage.sent.sender-service.central"
 
 func (a *WarningMessageActivities) SendWarningMessageToHost(ctx context.Context, envelopeAsJson []byte, uuid string, hostAndPort string) (time.Time, error) {
 	logger := activity.GetLogger(ctx)
@@ -39,9 +39,9 @@ func (a *WarningMessageActivities) SendWarningMessageToHost(ctx context.Context,
 func (a *WarningMessageActivities) PublishEvent(ctx context.Context, envelopeAsJson []byte, uuid string) error {
 	logger := activity.GetLogger(ctx)
 
-	err := a.NatsClient.Publish(topic, envelopeAsJson)
+	err := a.NatsClient.Publish(topicWarningMessageSent, envelopeAsJson)
 	if err != nil {
-		logger.Warn("WARN: Could not publish message "+uuid+" to queue "+topic, err)
+		logger.Warn("WARN: Could not publish message "+uuid+" to queue "+topicWarningMessageSent, err)
 	}
 
 	return err
